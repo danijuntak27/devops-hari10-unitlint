@@ -15,8 +15,9 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         sh '''
-          python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
+          python -m pip install --upgrade pip --user
+          pip install --no-cache-dir --user -r requirements.txt
+          export PATH=$PATH:$HOME/.local/bin
         '''
       }
     }
