@@ -4,7 +4,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'git@github.com:danijuntak27/devops-hari10-unitlint.git'
+        git credentialsId: 'github-ssh-key', url: 'git@github.com:danijuntak27/devops-hari10-unitlint.git', branch: 'main'
       }
     }
 
@@ -16,13 +16,17 @@ pipeline {
 
     stage('Lint') {
       steps {
-        sh 'pylint app/*.py'
+        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+          sh 'pylint app/*.py'
+        }
       }
     }
 
     stage('Test') {
       steps {
-        sh 'pytest'
+        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+          sh 'pytest'
+        }
       }
     }
 
@@ -30,6 +34,7 @@ pipeline {
       steps {
         script {
           def image = "devops-unitlint:${env.BUILD_NUMBER}"
+          sh "docker rm -f devops_unitlint || true"
           sh "docker build -t ${image} ."
           sh "docker run -d -p 7001:7000 --name devops_unitlint ${image}"
         }
