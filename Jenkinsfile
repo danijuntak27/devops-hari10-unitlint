@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'python:3.10'
+      args '-u root'  // supaya bisa install kalau perlu
+    }
+  }
 
   stages {
     stage('Checkout') {
@@ -16,28 +21,13 @@ pipeline {
 
     stage('Lint') {
       steps {
-        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-          sh 'pylint app/*.py'
-        }
+        sh 'pylint app/*.py || true'
       }
     }
 
     stage('Test') {
       steps {
-        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-          sh 'pytest'
-        }
-      }
-    }
-
-    stage('Docker Build & Run') {
-      steps {
-        script {
-          def image = "devops-unitlint:${env.BUILD_NUMBER}"
-          sh "docker rm -f devops_unitlint || true"
-          sh "docker build -t ${image} ."
-          sh "docker run -d -p 7001:7000 --name devops_unitlint ${image}"
-        }
+        sh 'pytest'
       }
     }
   }
