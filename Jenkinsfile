@@ -2,12 +2,7 @@ pipeline {
   agent {
     docker {
       image 'python:3.9'
-      args '-u root'  // untuk memastikan bisa install dan write jika perlu
     }
-  }
-
-  environment {
-    PIP_CACHE_DIR = '.pip-cache'  // mencegah cache di root system
   }
 
   stages {
@@ -43,7 +38,7 @@ pipeline {
         script {
           def image = "devops-unitlint:${env.BUILD_NUMBER}"
           sh "docker build -t ${image} ."
-          sh "docker run -d -p 7001:7000 --rm --name devops_unitlint ${image}"
+          sh "docker run -d --rm -p 7001:7000 --name devops_unitlint ${image}"
         }
       }
     }
@@ -51,10 +46,7 @@ pipeline {
 
   post {
     always {
-      echo "Pipeline Finished."
-    }
-    failure {
-      echo "Pipeline Failed."
+      echo "Pipeline Selesai."
     }
   }
 }
