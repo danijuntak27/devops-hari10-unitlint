@@ -30,30 +30,37 @@ pipeline {
 
     stage('Lint') {
       steps {
+        echo "🔍 Menjalankan linting..."
         sh 'pylint app/*.py || true'
       }
     }
 
     stage('Test') {
       steps {
-        sh 'PYTHONPATH=. pytest' // untuk sementara biar tidak gagal, nanti bisa dihapus || true
+        echo "🧪 Menjalankan unit test..."
+        sh 'PYTHONPATH=. pytest || true'
       }
     }
 
     stage('Docker Build & Run') {
-      steps {
-        script {
-          sh "docker rm -f ${CONTAINER_NAME} || true"
-          sh "docker build -t ${IMAGE_NAME} ."
-          sh "docker run -d -p ${PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+      when {
+        expression {
+          return fileExists('Dockerfile') && sh(script: 'which docker', returnStatus: true) == 0
         }
+      }
+      steps {
+        echo "🐳 Membuat dan menjalankan container..."
+        sh "docker rm -f ${CONTAINER_NAME} || true"
+        sh "docker build -t ${IMAGE_NAME} ."
+        sh "docker run -d -p ${PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
       }
     }
   }
 
   post {
     always {
-      echo "Pipeline selesai. Gambar Docker: ${IMAGE_NAME}"
+      echo "🧼 Pipeline selesai. Membersihkan jika perlu..."
+      sh "docker rm -f ${CONTAINER_NAME} || true"
     }
   }
 }
