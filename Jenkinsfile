@@ -1,13 +1,11 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'python:3.9'
+    }
+  }
 
   stages {
-    stage('Checkout') {
-      steps {
-        git credentialsId: 'github-ssh-key', url: 'git@github.com:danijuntak27/devops-hari10-unitlint.git', branch: 'main'
-      }
-    }
-
     stage('Install Dependencies') {
       steps {
         sh 'pip install -r requirements.txt'
@@ -22,17 +20,13 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh 'pytest'
+        sh 'pytest app/test_main.py'
       }
     }
 
-    stage('Docker Build & Run') {
+    stage('Docker Build') {
       steps {
-        script {
-          def image = "devops-unitlint:${env.BUILD_NUMBER}"
-          sh "docker build -t ${image} ."
-          sh "docker run -d -p 7001:7000 --name devops_unitlint ${image}"
-        }
+        sh 'docker build -t devops-unitlint .'
       }
     }
   }
