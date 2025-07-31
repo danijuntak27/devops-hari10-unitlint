@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'python:3.10'
-      args '-u root'  // supaya bisa install kalau perlu
-    }
-  }
+  agent any
 
   stages {
     stage('Checkout') {
@@ -21,13 +16,23 @@ pipeline {
 
     stage('Lint') {
       steps {
-        sh 'pylint app/*.py || true'
+        sh 'pylint app/*.py'
       }
     }
 
     stage('Test') {
       steps {
         sh 'pytest'
+      }
+    }
+
+    stage('Docker Build & Run') {
+      steps {
+        script {
+          def image = "devops-unitlint:${env.BUILD_NUMBER}"
+          sh "docker build -t ${image} ."
+          sh "docker run -d -p 7001:7000 --name devops_unitlint ${image}"
+        }
       }
     }
   }
