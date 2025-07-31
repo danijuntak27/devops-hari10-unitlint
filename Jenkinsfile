@@ -36,7 +36,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh 'pytest || true' // untuk sementara biar tidak gagal, nanti bisa dihapus || true
+        sh 'PYTHONPATH=. pytest' // untuk sementara biar tidak gagal, nanti bisa dihapus || true
       }
     }
 
