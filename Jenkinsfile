@@ -1,13 +1,11 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.9'
-            args '-u root:root' // jalankan sebagai root agar bebas permission
-        }
-    }
+    agent any
 
     environment {
         VENV_PATH = "${WORKSPACE}/venv"
+        IMAGE_NAME = "devops-unitlint:${BUILD_NUMBER}"
+        CONTAINER_NAME = "devops_unitlint"
+        PORT = "7001:7000"
     }
 
     stages {
@@ -17,10 +15,10 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Virtualenv') {
             steps {
                 sh '''
-                    python -m venv venv
+                    python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
@@ -32,7 +30,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    flake8 .
+                    flake8 app/
                 '''
             }
         }
@@ -48,17 +46,21 @@ pipeline {
 
         stage('Docker Build & Run') {
             steps {
-                sh '''
-                    docker build -t myapp .
-                    docker run -d --name myapp_container -p 5000:5000 myapp
-                '''
+                script {
+                    // Stop and remove container if already running
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
+                    // Build image
+                    sh "docker build -t ${IMAGE_NAME} ."
+                    // Run container
+                    sh "docker run -d -p ${PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                }
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline Selesai.'
+            echo "Pipeline selesai. Gambar Docker: ${IMAGE_NAME}"
         }
     }
 }
